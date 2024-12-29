@@ -1,77 +1,67 @@
-// 提取便签内容的函数
-function extractNotes() {
-  // 获取所有的便签行，使用第一个 CodeMirror-code 容器内的行
-  const container = document.querySelector('.CodeMirror-code');
-  if (!container) {
-    console.error('未找到便签容器');
-    return;
+async function extractNotes() {
+  const iframe = document.getElementById('cloud_app_notes');
+  const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+  const notesData = {};
+
+  // 获取所有分类
+  const categories = iframeDoc.querySelectorAll('.folder-item');
+  for (let i = 0; i < categories.length; i++) {
+    const category = categories[i];
+    category.click(); // 模拟点击分类
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // 等待数据加载
+
+    const categoryName = category
+      .querySelector('.folder-tit-wrap .ng-binding')
+      .innerText.trim();
+    notesData[categoryName] = [];
+
+    // 获取当前分类下的便签列表
+    const notes = iframeDoc.querySelectorAll('.note-item');
+    for (let j = 0; j < notes.length; j++) {
+      const note = notes[j];
+      note.click(); // 模拟点击便签
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // 等待数据加载
+
+      const title = note
+        .querySelector('.note-title .ng-binding')
+        .innerText.trim();
+      const content = iframeDoc
+        .querySelector('.CodeMirror-code')
+        .innerText.trim();
+      notesData[categoryName].push({ title, content });
+    }
   }
 
-  const noteLines = container.querySelectorAll('.CodeMirror-line');
-  console.log('找到的行数:', noteLines.length); // 调试信息
-
-  // 将 NodeList 转换为数组并处理每一行
-  const lines = Array.from(noteLines)
-    .map(line => {
-      // 获取文本内容并去除首尾空格
-      const text = line.textContent.trim();
-      console.log('处理行:', text); // 调试信息
-      return text || '';
-    })
-    .filter(line => line !== ''); // 过滤掉空行
-
-  // 使用双换行符连接所有行，创建 Markdown 格式的文本
-  const markdown = lines.join('\n\n');
-  console.log('生成的 Markdown:', markdown); // 调试信息
-
-  // 创建下载链接
-  downloadMarkdown(markdown);
+  return notesData;
 }
 
-// 下载 Markdown 文件的函数
-function downloadMarkdown(content) {
-  // 创建 Blob 对象
-  const blob = new Blob([content], { type: 'text/markdown' });
+function downloadMarkdownFiles(notesData) {
+  const zip = new JSZip();
 
-  // 创建下载链接
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'notes.md'; // 设置下载文件名
+  Object.keys(notesData).forEach((category) => {
+    const folder = zip.folder(category);
+    notesData[category].forEach((note, index) => {
+      folder.file(`${note.title || `note_${index}`}.md`, note.content);
+    });
+  });
 
-  // 添加链接到页面并触发点击
-  document.body.appendChild(a);
-  a.click();
-
-  // 清理
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  zip.generateAsync({ type: 'blob' }).then(function (content) {
+    saveAs(content, 'notes.zip');
+  });
 }
 
-// 创建一个按钮来触发导出
-function createExportButton() {
-  const button = document.createElement('button');
-  button.textContent = '导出为 Markdown';
-  button.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 10px 20px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    z-index: 9999;
-  `;
+// 添加依赖库
+const jszipScript = document.createElement('script');
+jszipScript.src =
+  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js';
+document.head.appendChild(jszipScript);
 
-  button.addEventListener('click', extractNotes);
-  document.body.appendChild(button);
-}
+const fileSaverScript = document.createElement('script');
+fileSaverScript.src =
+  'https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js';
+document.head.appendChild(fileSaverScript);
 
-// 当页面加载完成后创建导出按钮
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', createExportButton);
-} else {
-  createExportButton();
-}
+// 执行脚本
+extractNotes().then((notesData) => {
+  downloadMarkdownFiles(notesData);
+});
