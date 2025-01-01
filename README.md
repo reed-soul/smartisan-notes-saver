@@ -1,44 +1,106 @@
-# 锤子便签导出工具
+# Smartisan Notes Exporter
 
-## 功能
+一个用于导出锤子便签内容的 Chrome 扩展程序。支持将便签导出为 Markdown 格式，并保持原有的文件夹分类结构。
 
-- 从锤子便签中提取内容导出 Markdown 格式文件
-- 在页面右上角提供导出按钮
 
-## 提示
- - 当前版本只支持单个便签内容导出，多便签内容导出功能正在开发中
+## 功能特点
 
-## 安装
+- 一键导出所有便签内容
+- 保持原有的文件夹分类结构
+- 导出格式为 Markdown
+- 保留便签的修改时间信息
+- 自动处理未分类便签
+- 支持批量导出为 ZIP 压缩包
 
-1. 下载 release 文件夹中的 zip 文件
-2. 在 Chrome 浏览器中，打开扩展程序页面（chrome://extensions/）。
-3. 启用开发者模式。
-4. 点击“加载已解压的扩展程序”，选择项目的根目录。
-5. 确保扩展程序已成功加载。
+## 安装方法
 
-## 使用
+### 从 Chrome 网上应用店安装
 
-1. 打开 [锤子便签](https://yun.smartisan.com/) 页面。
-2. 在页面右上角找到“导出 Markdown”按钮。
-3. 点击按钮，便签内容将被提取并下载为 Markdown 文件。
+1. 访问 Chrome 网上应用店（链接待添加）
+2. 点击"添加到 Chrome"按钮
+3. 确认安装
 
-![插件预览](public/imgs/preview.png)
+### 手动安装（开发者模式）
+
+1. 下载本项目的 ZIP 文件并解压
+2. 打开 Chrome 浏览器，进入扩展程序页面（chrome://extensions/）
+3. 开启右上角的"开发者模式"
+4. 点击"加载已解压的扩展程序"
+5. 选择解压后的文件夹
+
+## 使用方法
+
+1. 登录锤子便签网页版 (note.smartisan.com)
+2. 页面右上角会出现"导出 Markdown"按钮
+3. 点击按钮，等待导出完成
+4. 自动下载包含所有便签的 ZIP 文件
+
+## 导出文件说明
+
+- 导出的 ZIP 文件包含多个文件夹，对应您在锤子便签中的分类
+- 未分类的便签会被放入"未分类"文件夹
+- 每个便签文件都是 Markdown 格式（.md 后缀）
+- 文件名为便签的标题（已处理特殊字符）
+- 每个便签文件的内容格式如下：
+  ```markdown
+  修改时间：YYYY-MM-DD HH:mm:ss
+
+  便签正文内容...
+  ```
+
+## 隐私说明
+
+- 本扩展程序仅在 note.smartisan.com 域名下运行
+- 仅读取便签数据用于导出，不会上传或分享您的数据
+- 所有操作均在本地完成，无需联网
+
+## 技术说明
+
+### 依赖库
+- [JSZip](https://stuk.github.io/jszip/) v3.10.1 - 用于生成 ZIP 压缩包
+- [FileSaver.js](https://github.com/eligrey/FileSaver.js/) v2.0.5 - 用于文件下载
+
+### 实现原理
+- 使用 IndexedDB 直接读取便签数据
+- 使用 JSZip 处理文件打包
+- 使用 FileSaver.js 处理文件下载
+
+### 开发相关
+如果你想参与开发，需要：
+1. 克隆项目
+2. 安装依赖：
+   ```bash
+   npm install jszip@3.10.1 file-saver@2.0.5
+   ```
+3. 将 node_modules 中的依赖文件复制到 lib 目录：
+   - `lib/jszip.min.js`
+   - `lib/FileSaver.min.js`
+
+## 已知问题
+
+- 暂不支持便签中的图片导出
+- 暂不支持便签的样式导出
+
+## 更新日志
+
+### v1.0
+- 初始版本发布
+- 支持批量导出所有便签
+- 支持保持文件夹分类
+- 支持导出修改时间
+
+## 贡献代码
+
+欢迎提交 Issue 和 Pull Request。
 
 ## 请我喝咖啡
 
-如果你觉得这个插件对你有帮助，可以请我喝杯咖啡！以下是我的收款二维码：
+如果这个工具对你有帮助，欢迎请我喝杯咖啡 ☕️
 
-<div style="display: flex; justify-content: space-around; align-items: center;">
-  <div style="text-align: center;">
-    <h3>微信</h3>
-    <img src="public/imgs/wechat-pay.jpg" alt="请我喝咖啡 - 微信" style="width: 150px; height: auto;" />
-  </div>
-  <div style="text-align: center;">
-    <h3>支付宝</h3>
-    <img src="public/imgs/alipay.jpg" alt="请我喝咖啡 - 支付宝" style="width: 150px; height: auto;" />
-  </div>
-</div>
+<img src="public/imgs/wechat-pay.jpg" width="200" alt="微信支付">
+<img src="public/imgs/alipay.jpg" width="200" alt="支付宝">
 
-## 贡献
 
-欢迎提出建议和拉取请求！
+## 许可证
+
+MIT License
