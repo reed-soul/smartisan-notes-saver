@@ -1,38 +1,86 @@
+async function openDatabase(dbName) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(dbName, 5); // 添加版本号
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+  });
+}
+
 async function extractNotes() {
-  const iframe = document.getElementById('cloud_app_notes');
-  const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-  const notesData = {};
+  try {
+    // 打开文件夹数据库
+    const folderDb = await openDatabase('_pouch_folder');
+    // 打开便签数据库
+    const noteDb = await openDatabase('_pouch_note');
 
-  // 获取所有分类
-  const categories = iframeDoc.querySelectorAll('.folder-item');
-  for (let i = 0; i < categories.length; i++) {
-    const category = categories[i];
-    category.click(); // 模拟点击分类
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // 等待数据加载
+    // 获取所有分类
+    const folders = await new Promise((resolve, reject) => {
+      const transaction = folderDb.transaction(['by-sequence'], 'readonly');
+      const store = transaction.objectStore('by-sequence');
+      const request = store.getAll();
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
 
-    const categoryName = category
-      .querySelector('.folder-tit-wrap .ng-binding')
-      .innerText.trim();
-    notesData[categoryName] = [];
+    // 获取所有便签
+    const notes = await new Promise((resolve, reject) => {
+      const transaction = noteDb.transaction(['by-sequence'], 'readonly');
+      const store = transaction.objectStore('by-sequence');
+      const request = store.getAll();
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
 
-    // 获取当前分类下的便签列表
-    const notes = iframeDoc.querySelectorAll('.note-item');
-    for (let j = 0; j < notes.length; j++) {
-      const note = notes[j];
-      note.click(); // 模拟点击便签
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // 等待数据加载
+    // 处理分类数据，建立 sync_id 到 title 的映射
+    const folderMap = new Map();
+    folders.forEach(item => {
+      if (item.folder && !item._deleted) {
+        folderMap.set(item.folder.sync_id, item.folder.title);
+      }
+    });
 
-      const title = note
-        .querySelector('.note-title .ng-binding')
-        .innerText.trim();
-      const content = iframeDoc
-        .querySelector('.CodeMirror-code')
-        .innerText.trim();
-      notesData[categoryName].push({ title, content });
-    }
+    // 整理便签数据
+    const notesData = {};
+    notes.forEach(item => {
+      if (!item.note || item._deleted) return;
+
+      const note = item.note;
+      const folderId = note.folderId;
+      const folderName = folderMap.get(folderId) || '未分类';
+
+      if (!notesData[folderName]) {
+        notesData[folderName] = [];
+      }
+
+      // 格式化修改时间
+      const modifyTime = new Date(note.modify_time);
+      const formattedTime = modifyTime.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+
+      // 组合内容：修改时间 + 原始内容
+      const content = `修改时间：${formattedTime}\n\n${note.detail || ''}`;
+
+      notesData[folderName].push({
+        title: note.title || `note_${note._id}`,
+        content: content
+      });
+    });
+
+    // 关闭数据库连接
+    folderDb.close();
+    noteDb.close();
+
+    return notesData;
+  } catch (error) {
+    console.error('Error extracting notes:', error);
+    throw error;
   }
-
-  return notesData;
 }
 
 function downloadMarkdownFiles(notesData) {
@@ -41,7 +89,9 @@ function downloadMarkdownFiles(notesData) {
   Object.keys(notesData).forEach((category) => {
     const folder = zip.folder(category);
     notesData[category].forEach((note, index) => {
-      folder.file(`${note.title || `note_${index}`}.md`, note.content);
+      // 清理文件名中的非法字符
+      const safeTitle = note.title.replace(/[\\/:*?"<>|]/g, '_');
+      folder.file(`${safeTitle}.md`, note.content);
     });
   });
 
@@ -50,18 +100,35 @@ function downloadMarkdownFiles(notesData) {
   });
 }
 
-// 添加依赖库
-const jszipScript = document.createElement('script');
-jszipScript.src =
-  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js';
-document.head.appendChild(jszipScript);
+async function loadScript(url) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = url;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
 
-const fileSaverScript = document.createElement('script');
-fileSaverScript.src =
-  'https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js';
-document.head.appendChild(fileSaverScript);
+async function loadDependencies() {
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js');
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js');
+}
 
-// 执行脚本
-extractNotes().then((notesData) => {
-  downloadMarkdownFiles(notesData);
-});
+// 修改执行逻辑
+async function main() {
+  try {
+    // 先加载依赖
+    await loadDependencies();
+    console.log('Dependencies loaded');
+
+    // 然后执行导出
+    const notesData = await extractNotes();
+    await downloadMarkdownFiles(notesData);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+// 执行主函数
+main();
