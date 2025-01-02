@@ -22,7 +22,7 @@
 
 ### 手动安装（开发者模式）
 
-1. 下载本项目的 ZIP 文件并解压
+1. 下载本项目的发布的 ZIP 文件并解压
 2. 打开 Chrome 浏览器，进入扩展程序页面（chrome://extensions/）
 3. 开启右上角的"开发者模式"
 4. 点击"加载已解压的扩展程序"
@@ -64,17 +64,6 @@
 - 使用 IndexedDB 直接读取便签数据
 - 使用 JSZip 处理文件打包
 - 使用 FileSaver.js 处理文件下载
-
-### 开发相关
-如果你想参与开发，需要：
-1. 克隆项目
-2. 安装依赖：
-   ```bash
-   npm install jszip@3.10.1 file-saver@2.0.5
-   ```
-3. 将 node_modules 中的依赖文件复制到 lib 目录：
-   - `lib/jszip.min.js`
-   - `lib/FileSaver.min.js`
 
 ## 已知问题
 
