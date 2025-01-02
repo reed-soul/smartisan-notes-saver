@@ -1,5 +1,9 @@
 console.log('Content script loaded');
 
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+
+
 // 创建导出按钮
 function createExportButton() {
   const button = document.createElement('button');
