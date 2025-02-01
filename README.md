@@ -82,13 +82,6 @@
 
 欢迎提交 Issue 和 Pull Request。
 
-## 请我喝咖啡
-
-如果这个工具对你有帮助，欢迎请我喝杯咖啡 ☕️
-
-<img src="public/imgs/wechat-pay.jpg" width="200" alt="微信支付">
-<img src="public/imgs/alipay.jpg" width="200" alt="支付宝">
-
 
 ## 许可证
 
