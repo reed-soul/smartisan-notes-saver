@@ -16,7 +16,7 @@
 
 ### 从 Chrome 网上应用店安装
 
-1. 访问 Chrome 网上应用店（链接待添加）
+1. [访问 Chrome 网上应用店](https://chromewebstore.google.com/detail/%E9%94%A4%E5%AD%90%E4%BE%BF%E7%AD%BE%E5%AF%BC%E5%87%BA%E5%8A%A9%E6%89%8B/ikmdiigdockckbnfglpnlibjhdapkapf?hl=zh-CN&authuser=0)
 2. 点击"添加到 Chrome"按钮
 3. 确认安装
 
