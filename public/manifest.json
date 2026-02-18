@@ -12,7 +12,7 @@
   "content_scripts": [
     {
       "matches": [
-        "*://yun.smartisan.com/*"
+        "*://cloud.smartisan.com/*"
       ],
       "js": [
         "contentScript.js"
@@ -24,6 +24,6 @@
     }
   ],
   "host_permissions": [
-    "*://yun.smartisan.com/*"
+    "*://cloud.smartisan.com/*"
   ]
 }
